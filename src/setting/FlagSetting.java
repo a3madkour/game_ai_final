@@ -1,0 +1,73 @@
+package setting;
+
+/**
+ * ゲームの機能に関するフラグを扱うクラス．
+ */
+public class FlagSetting {
+
+	/**
+	 * 繰り返し対戦を行うかどうかのフラグ．
+	 */
+	public static boolean automationFlag = false;
+
+	/**
+	 * AIの全組み合わせの対戦を行うかどうかのフラグ．
+	 */
+	public static boolean allCombinationFlag = false;
+
+	/**
+	 * 背景画像を使用するかどうかのフラグ．
+	 */
+	public static boolean enableBackground = true;
+
+	/**
+	 * Pythonを使用するかどうかのフラグ．
+	 */
+	public static boolean py4j = false;
+
+	/**
+	 * アクションを行った回数をログに出力するかどうかのフラグ．
+	 */
+	public static boolean debugActionFlag = false;
+
+	/**
+	 * 未使用．
+	 */
+	public static boolean debugFrameDataFlag = false;
+
+	/**
+	 * トレーニングモードを使用するかどうかのフラグ．
+	 */
+	public static boolean trainingModeFlag = false;
+
+	/**
+	 * P1,P2に最大HPを設定するかどうかのフラグ．
+	 */
+	public static boolean limitHpFlag = false;
+
+	/**
+	 * 音をミュートにするかどうかのフラグ．
+	 */
+	public static boolean muteFlag = false;
+
+	/**
+	 * jsonファイルに試合データを出力するかどうかのフラグ．
+	 */
+	public static boolean jsonFlag = false;
+
+	/**
+	 * エラーログを出力するかどうかのフラグ．
+	 */
+	public static boolean outputErrorAndLogFlag = false;
+
+	/**
+	 * FastModeで起動するかどうかのフラグ．
+	 */
+	public static boolean fastModeFlag = false;
+
+	/**
+	 * ゲームウィンドウを生成するかどうかのフラグ．
+	 */
+	public static boolean enableWindow = true;
+
+}
