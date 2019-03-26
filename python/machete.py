@@ -52,6 +52,8 @@ class Machete(object):
 			#You can pass actions to the simulator by writing as follows:
 			#actions = self.gateway.jvm.java.util.ArrayDeque()
 			#actions.add(self.gateway.jvm.enumerate.Action.STAND_A)
+                        print("The type: ",self.gateway.jvm.enumerate.Action)
+                        print("The type: ",type(self.gateway.jvm.enumerate.Action))
 			#self.frameData = self.simulator.simulate(self.frameData, self.player, actions, actions, 17)
 		else:
 			# If the game just started, no point on simulating
