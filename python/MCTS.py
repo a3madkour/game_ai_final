@@ -103,7 +103,7 @@ class MCTS(object):
             print(self.op_actions)
             print(self.game_data)
             print(self.player_num)
-            root_node = TreeNode(self.simulator_ahead_frame_data,None,self.my_actions,self.op_actions,self.game_data,self.player_num,self.cc)
+            root_node = TreeNode(self.gateway,self.simulator_ahead_frame_data,None,self.my_actions,self.op_actions,self.game_data,self.player_num,self.cc)
 
             print("MCTS being called")
             best_action = root_node.MCTS()
