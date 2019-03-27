@@ -15,7 +15,6 @@ class TreeNode(object):
 
     def __init__(self,frame_data,parent,my_actions,op_actions,game_data,player_num,cc,selected_my_actions=None):
 
-        print("Hi I am being called!")
         self.frame_data = frame_data
         self.parent = parent
         self.my_actions = my_actions
@@ -30,6 +29,8 @@ class TreeNode(object):
         self.ucb = 0.0
         self.score = 0.0
 
+
+
         self.selected_my_actions = selected_my_actions
 
 
@@ -39,15 +40,20 @@ class TreeNode(object):
         my_char = self.frame_data.getCharacter(self.player_num)
         op_char = self.frame_data.getCharacter(not self.player_num)
 
-        self.my_original_hp = my_char.getHP()
-        self.op_original_hp = op_char.getHP()
+        self.my_original_hp = my_char.getHp()
+        self.op_original_hp = op_char.getHp()
 
         if (self.parent != None):
             self.depth = self.parent.depth +1
 
     def MCTS(self):
+        print("time to figure out what time is!")
+        print(time.time())
+        print("okay")
         start = time.time()
-        while(time.time() - start <= UCT_TIME):
+
+        while(time.time() - start <= self.UCT_TIME):
+            print("calling UCT")
             UCT()
 
         return getBestVisitAcion()
@@ -76,9 +82,11 @@ class TreeNode(object):
         selected_node = None
         bestUcb = -999999.0
         for child in self.children:
+            print("we failed")
             if child.games == 0:
                 child.ucb = 9999.0 + random.randint(50)
             else:
+                print("get ucb failed")
                 child.ucb = self.GetUcb(child.score / child.games, games, child.games)
 
             if bestUcb < child.ucb:
@@ -87,11 +95,12 @@ class TreeNode(object):
 
         score = 0.0
         if selected_node.games == 0:
+            print("rollout")
             score = selected_node.playout()
         else:
             if not selected_node.children:
-                if selected_node.depth < UCT_TREE_DEPTH:
-                    if UCT_CREATE_NODE_THRESHOULD <= selected_node.games:
+                if selected_node.depth <self.UCT_TREE_DEPTH:
+                    if self.UCT_CREATE_NODE_THRESHOULD <= selected_node.games:
                         selected_node.CreateNode()
                         selected_node.isCreateNode = True
                         score = selected_node.UCT()
@@ -100,7 +109,7 @@ class TreeNode(object):
                 else:
                     score = selected_node.playout()
             else:
-                if selected_node.depth < UCT_TREE_DEPTH:
+                if selected_node.depth < self.UCT_TREE_DEPTH:
                     score = selected_node.UCT()
                 else:
                     score = selected_node.playout()
