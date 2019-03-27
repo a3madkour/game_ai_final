@@ -4,6 +4,8 @@ from py4j.java_gateway import JavaGateway, GatewayParameters, CallbackServerPara
 from KickAI import KickAI
 from DisplayInfo import DisplayInfo
 from machete import Machete
+from MCTS import MCTS
+
 def check_args(args):
 	for i in range(argc):
 		if args[i] == "-n" or args[i] == "--n" or args[i] == "--number":
@@ -12,8 +14,9 @@ def check_args(args):
 
 def start_game():
         # p1 = KickAI(gateway)
-        p1 = Machete(gateway)
-        p2 = DisplayInfo(gateway)
+        p1 = MCTS(gateway)
+        p2 = Machete(gateway)
+        # p2 = DisplayInfo(gateway)
         manager.registerAI(p1.__class__.__name__, p1)
         manager.registerAI(p2.__class__.__name__, p2)
         print("Start game")

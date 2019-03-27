@@ -13,10 +13,9 @@ class TreeNode(object):
     SIMULATION_TIME = 60
     DEBUG_MODE = True
 
+    def __init__(self,frame_data,parent,my_actions,op_actions,game_data,player_num,cc,selected_my_actions=None):
 
-    def __init__(self,frame_data,parent,my_actions,op_actions,
-            game_data,player_num,cc):
-
+        print("Hi I am being called!")
         self.frame_data = frame_data
         self.parent = parent
         self.my_actions = my_actions
@@ -31,9 +30,6 @@ class TreeNode(object):
         self.ucb = 0.0
         self.score = 0.0
 
-    def __init__(self,frame_data,parent,my_actions,op_actions,
-            game_data,player_num,cc,selected_my_actions):
-        self = TreeNode(frame_data,parent,my_actions,op_actions,game_data,player_num,cc)
         self.selected_my_actions = selected_my_actions
 
 

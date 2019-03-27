@@ -1,6 +1,6 @@
 from py4j.java_gateway import get_field
 import collections
-import TreeNode
+from TreeNode import TreeNode
 import math
 
 class MCTS(object):
@@ -49,7 +49,7 @@ class MCTS(object):
             self.action_air = ["AIR_GUARD","AIR_A","AIR_B","AIR_DA","AIR_DB","AIR_FA","AIR_FB","AIR_UA",
                     "AIR_UB","AIR_D_DF_FA","AIR_D_DF_FB","AIR_F_DF_DFA","AIR_F_D_DFB","AIR_D_DB_BA",
                     "AIR_D_DB_BB"]
-            self.action_ground [ "STAND_D_DB_BA", "BACK_STEP","FORWARD_WALK","DASH","JUMP","FOR_JUMP",
+            self.action_ground = [ "STAND_D_DB_BA", "BACK_STEP","FORWARD_WALK","DASH","JUMP","FOR_JUMP",
                     "BACK_JUMP","STAND_GUARD","CROUCH_GUARD","THROW_A","THROW_B","STAND_A","STAND_B",
                     "CROUCH_A","CROUCH_B","STAND_FA","STAND_FB","CROUCH_FA","CROUCH_FB","STAND_D_DF_FA",
                     "STAND_D_DF_FB","STAND_F_D_DFA","STAND_F_D_DFB","STAND_D_DB_BB"]
@@ -57,6 +57,8 @@ class MCTS(object):
 
             self.my_motion_data = self.game_data.getMotionData(self.player_num)
             self.op_motion_data = self.game_data.getMotionData(not self.player_num)
+
+
 
 
             return 0
@@ -73,7 +75,7 @@ class MCTS(object):
                 return
             if not self.is_game_just_started:
                 # Simulate the delay and look ahead 2 frames. The simulator class exists already in FightingICE
-                    self.frame_data = self.simulator.simulate(self.frame_data, self.player_num, None, None, FRAME_AHEAD)
+                self.frame_data = self.simulator.simulate(self.frame_data, self.player_num, None, None, self.FRAME_AHEAD)
             else:
                 # If the game just started, no point on simulating
                     self.is_game_just_started = False
@@ -93,9 +95,17 @@ class MCTS(object):
             self.input_key.empty()
             self.cc.skillCancel()
 
+            print("calling MCTS Prep")
             self.MCTSPrepare()
+            print("okay calling root_node")
+            print(self.simulator_ahead_frame_data)
+            print(self.my_actions)
+            print(self.op_actions)
+            print(self.game_data)
+            print(self.player_num)
             root_node = TreeNode(self.simulator_ahead_frame_data,None,self.my_actions,self.op_actions,self.game_data,self.player_num,self.cc)
 
+            print("MCTS being called")
             best_action = root_node.MCTS()
             if self.DEBUG_MODE:
                 print(root_node)
@@ -103,26 +113,71 @@ class MCTS(object):
             self.cc.commandCall(best_action)
 
     def MCTSPrepare(self):
-        self.simulator_ahead_frame_data = self.simulator.simulate(self.frame_data, self.player_num, None, None, FRAME_AHEAD)
+        print(self.FRAME_AHEAD)
+        self.simulator_ahead_frame_data = self.simulator.simulate(self.frame_data, self.player_num, None, None, self.FRAME_AHEAD)
+
 
         self.my_char = self.simulator_ahead_frame_data.getCharacter(self.player_num)
         self.op_char =  self.simulator_ahead_frame_data.getCharacter(not self.player_num)
 
+        print("Getting my actions")
         self.SetMyAction()
+        print("Getting op actions")
         self.SetOpAction()
 
     def SetMyAction(self):
 
+
+        print("clearing my actions")
+
         self.my_actions.clear()
+
+        print("getting eneregy")
 
         energy = self.my_char.getEnergy()
 
-        #actions.add(self.gateway.jvm.enumerate.Action.STAND_A)
+        #actions.add(self.gateway.jvm.enumerate.Action.)
 
-        if self.my_char == "AIR":
+        print("checkig if AIR ")
+        if str(self.my_char.getState()) == "AIR":
+            print("start of the for loop")
             for i in range(len(self.action_air)):
-                if math.abs(self.my_motion_data   )
-        
+                print("checking if we have enough energy")
+                if abs(self.my_motion_data[self.gateway.jvm.enumerate.Action.valueOf(self.action_air[i]).ordinal()].getAttackStartAddEnergy()) <= energy:
+                    self.my_actions.append(self.action_air[i])
+        else:
+            print("we are not in the air ")
+            print("checking the motion stuff")
+            move_index = self.gateway.jvm.enumerate.Action.valueOf(self.sp_skill).ordinal()
+            print("trying motion data: ",abs(self.my_motion_data[move_index].getAttackStartAddEnergy()))
+            if abs(self.my_motion_data[move_index].getAttackStartAddEnergy()) <= energy:
+                print("the if worked")
+                self.my_actions.append(self.sp_skill)
+                print("so did the append!")
+
+            for i in range(len(self.action_ground)):
+                if abs(self.my_motion_data[self.gateway.jvm.enumerate.Action.valueOf(self.action_ground[i]).ordinal()].getAttackStartAddEnergy()) <= energy:
+                    self.my_actions.append(self.action_ground[i])
+
+    def SetOpAction(self):
+
+        self.op_actions.clear()
+
+        energy = self.op_char.getEnergy()
+
+
+        if str(self.op_char.getState()) == "AIR":
+            for i in range(len(self.action_air)):
+                if abs(self.op_motion_data[self.gateway.jvm.enumerate.Action.valueOf(self.action_air[i]).ordinal()].getAttackStartAddEnergy()) <= energy:
+                    self.op_actions.append(self.action_air[i])
+        else:
+            if abs(self.op_motion_data[self.gateway.jvm.enumerate.Action.valueOf(self.sp_skill).ordinal()].getAttackStartAddEnergy()) <= energy:
+                self.op_actions.append(self.sp_skill)
+
+            for i in range(len(self.action_ground)):
+                if abs(self.op_motion_data[self.gateway.jvm.enumerate.Action.valueOf(self.action_ground[i]).ordinal()].getAttackStartAddEnergy()) <= energy:
+                    self.op_actions.append(self.action_ground[i])
+
 
     class Java:
             implements = ["aiinterface.AIInterface"]
