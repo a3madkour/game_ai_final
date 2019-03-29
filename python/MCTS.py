@@ -105,17 +105,29 @@ class MCTS(object):
             # print(self.op_actions)
             # print(self.game_data)
             # print(self.player_num)
+            
             root_node = TreeNode(self.gateway,self.simulator_ahead_frame_data,None,self.my_actions,self.op_actions,self.game_data,self.player_num,self.cc)
+            # print("root node created")
 
             # print("MCTS being called")
             best_action = root_node.MCTS()
+            # print("MCTS is done?")
+            # print("best_action: ",best_action)
+            # print(self.DEBUG_MODE)
+
+            # print(root_node)
+
             if self.DEBUG_MODE:
                 print(root_node)
+                # print("please work")
 
+            # print("best_action : ")
+            # print(best_action)
+            # print("picked action: ",best_action.name())
             self.cc.commandCall(best_action.name())
 
     def MCTSPrepare(self):
-        print(self.FRAME_AHEAD)
+        # print(self.FRAME_AHEAD)
         self.simulator_ahead_frame_data = self.simulator.simulate(self.frame_data, self.player_num, None, None, self.FRAME_AHEAD)
 
 

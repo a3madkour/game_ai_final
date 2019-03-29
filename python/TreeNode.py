@@ -6,7 +6,7 @@ import math
 
 class TreeNode(object):
 
-    UCT_TIME = 165 * 100000
+    UCT_TIME = 0.01
     UCB_C = 3.0
     UCT_TREE_DEPTH = 2
     UCT_CREATE_NODE_THRESHOULD = 10
@@ -30,6 +30,7 @@ class TreeNode(object):
         self.games = 0
         self.ucb = 0.0
         self.score = 0.0
+        self.is_create_node = False
 
         # print("where do I fail?")
         if selected_my_actions == None:
@@ -57,9 +58,14 @@ class TreeNode(object):
 
         while(time.time() - start <= self.UCT_TIME):
             # print("calling UCT")
-            self.UCT()
+            # print(time.time() - start <= self.UCT_TIME)
+            # print(time.time() - start)
+            # print(self.UCT_TIME)
 
-        return self.GetBestVisitAcion()
+            self.UCT()
+            # print("UCT IS GOOD SO WHT IS THE PROBLEM MAAAAAN")
+
+        return self.GetBestVisitAction()
 
     def Playout(self):
 
@@ -110,7 +116,7 @@ class TreeNode(object):
         # new_frame_data = self.simulator.simulate(self.frame_data,self.player_num,self.m_action,self.op_action,self.SIMULATION_TIME)
         new_frame_data = self.simulator.simulate(self.frame_data,self.player_num,self.m_action,self.op_action,self.SIMULATION_TIME)
 
-        # print("new frame data succefull!")
+        print("new frame data succefull!")
 
         return self.GetScore(new_frame_data)
 
@@ -118,10 +124,11 @@ class TreeNode(object):
         # print("UCT being called: ")
         selected_node = None
         bestUcb = -999999.0
-        # print("for loop: ")
+        # print("do we have children ")
         if self.children:
+            # print("we have children")
             for child in self.children:
-                # print("we failed")
+                # print("we have children")
                 if child.games == 0:
                     # print("child has no games")
                     # print("hello: ",random.randint(0,2))
@@ -136,6 +143,7 @@ class TreeNode(object):
                     selected_node = child
                     bestUcb = child.ucb
         else:
+            # print("we do not have children")
             selected_node = self
 
         score = 0.0
@@ -147,13 +155,13 @@ class TreeNode(object):
             # print("the if statement failed")
             if not selected_node.children:
                 # print("selected node does not have any children")
-                if selected_node.depth <self.UCT_TREE_DEPTH:
+                if selected_node.depth < self.UCT_TREE_DEPTH:
                     # print("depth is less than the preset value")
                     if self.UCT_CREATE_NODE_THRESHOULD <= selected_node.games:
                         # print("the thresholdis less than the number of games")
                         # print("calling create node")
                         selected_node.CreateNode()
-                        selected_node.isCreateNode = True
+                        selected_node.is_create_node = True
                         score = selected_node.UCT()
                     else:
                         # print("doing a playout")
@@ -167,11 +175,16 @@ class TreeNode(object):
                 else:
                     score = selected_node.Playout()
 
+        # print("we passed all the ifs yay!")
         selected_node.games += 1
+        # print("added the current score to the node's score")
         selected_node.score += score
+        # print("and it worked? checking depth")
 
         if self.depth == 0:
+            # print("depth")
             self.games += 1
+        # print("depth is fine and so is games")
 
         return score
     
@@ -198,32 +211,57 @@ class TreeNode(object):
             self.children.append(child_node)
 
     def GetBestVisitAction(self):
+
+        # print("GetBestVisitAction is called")
         
-        selected = -1
+        selected = 0
         best_games = -9999.0
 
+        # print("starting for loop")
+        # print("self.children: ",self.children)
+
         for i in range(len(self.children)):
-            if DEBUG_MODE:
-                print("Score is : ", self.children[i].score / self.children[i].games, ", Number of trials: " ,self.children[i].games, ", UCB: ", self.children[i].ucb, ", Action: ",self.my_actions.element(i)) 
+            # print("for loop starting")
+            if self.DEBUG_MODE:
+                # print("we are in debug mode so we are printing")
+                # print("score: ",self.children[i].score )
+                # print("games: ",self.children[i].games )
+                # print("ucb: ",self.children[i].ucb )
+                # print("actions: ",self.my_actions[i])
+                if self.children[i].games !=0:
+                    print("Score is : ", (self.children[i].score / self.children[i].games), ", Number of trials: " , self.children[i].games , ", UCB: ", self.children[i].ucb, ", Action: ",self.my_actions[i]) 
+                else:
+                    print("Score is : ", 0, ", Number of trials: " , self.children[i].games , ", UCB: ", self.children[i].ucb, ", Action: ",self.my_actions[i]) 
+
 
             if best_games < self.children[i].games:
                 best_games = self.children[i].games
                 selected = i
         
-        if DEBUG_MODE:
+        # print("self action: ",self.my_actions)
+        # print("selected: ", selected)
+        
+        if self.DEBUG_MODE:
             print("Selected my_actions: ",self.my_actions[selected], ", Total number of trials: ",self.games)
             print()
+
+        # print(self.my_actions)
+        # print(selected)
         
         return self.my_actions[selected]
 
     def GetBestScoreAction(self):
 
-        selected = -1
+        selected = 0
         best_score = -9999.0
 
         for i in range(len(self.children)):
 
-            print("Score is : ", self.children[i].score / self.children[i].games, ", Number of trials: " ,self.children[i].games, ", UCB: ", self.children[i].ucb, ", Action: ",self.my_actions[i]) 
+            if self.children[i].games !=0:
+                print("Score is : ", (self.children[i].score / self.children[i].games), ", Number of trials: " , self.children[i].games , ", UCB: ", self.children[i].ucb, ", Action: ",self.my_actions[i]) 
+            else:
+                print("Score is : ", 0, ", Number of trials: " , self.children[i].games , ", UCB: ", self.children[i].ucb, ", Action: ",self.my_actions[i]) 
+
 
             mean_score = self.children[i].score / self.children[i].games 
             if best_score < mean_score:
@@ -237,10 +275,17 @@ class TreeNode(object):
 
     def GetScore(self,frame_data):
         #basic evaluation score
+        # print("basic eval is being called")
         my_char = self.frame_data.getCharacter(self.player_num)
         op_char = self.frame_data.getCharacter(not self.player_num)
 
-        return (my_char.getHp() - self.my_original_hp ) - (op_char.getHp() - self.op_original_hp) 
+        # print("we got this far")
+
+        score =(my_char.getHp() - self.my_original_hp ) - (op_char.getHp() - self.op_original_hp)  
+
+        # print("score is good!")
+
+        return score
 
     def GetUCB(self,score,n,n_i):
         # print("GET UCB BEING CALLED")
@@ -252,19 +297,33 @@ class TreeNode(object):
         return self.score  + self.UCB_C + math.sqrt( (2.0 * math.log(n) )/ n_i )
 
     def __str__(self):
-        print("Total number of trails: ", self.games)
+        string = ""
+        string += "Total number of trails: "+ str(self.games) + '\n'
+
+        # print("going through the children")
 
         for i in range(len(self.children)):
-            print("Child ",i," : Trials: ", self.children[i].games, " ,Depth: ", self.children[i].depth," ,score: ", self.children[i].score/ self.children[i].games," UCB: ", self.children[i].ucb)
-
-        print()
-
-        for child in self.children:
-            if(child.isCreateNode):
-                print(child)
+            if self.children[i].games != 0:
+                string += "Child "+  str(i)+" : Trials: " +  str(self.children[i].games) + " ,Depth: " + str(self.children[i].depth) + " ,score: " +  str(self.children[i].score/ self.children[i].games) + " UCB: " + str(self.children[i].ucb) + '\n'
+            else:
+                string += "Child "+  str(i)+" : Trials: " +  str(self.children[i].games) + " ,Depth: " + str(self.children[i].depth) + " ,score: " +  "0" + " UCB: " + str(self.children[i].ucb) + '\n'
 
 
+        # print("going through the children worked")
 
+
+        string += '\n'
+
+
+
+        if self.children:
+            for child in self.children:
+                if(child.is_create_node):
+                    string += str(child)
+
+        # print("root node printing works!!!!!")
+
+        return string
 
 
 
