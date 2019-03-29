@@ -13,7 +13,7 @@ class TreeNode(object):
     SIMULATION_TIME = 60
     DEBUG_MODE = True
 
-    def __init__(self,gateway,frame_data,parent,my_actions,op_actions,game_data,player_num,cc,selected_my_actions=None):
+    def __init__(self,gateway,frame_data,parent,my_actions,op_actions,game_data,player_num,cc,selected_my_actions= None):
 
         self.frame_data = frame_data
         self.parent = parent
@@ -27,10 +27,13 @@ class TreeNode(object):
 
         self.children = []
         self.depth = 0
-        self.games = -1
+        self.games = 0
         self.ucb = 0.0
         self.score = 0.0
-        self.selected_my_actions = self.gateway.jvm.java.util.ArrayDeque()
+
+        # print("where do I fail?")
+        if selected_my_actions == None:
+            selected_my_actions = []
 
         self.selected_my_actions = selected_my_actions
         self.m_action = self.gateway.jvm.java.util.ArrayDeque()
@@ -47,82 +50,87 @@ class TreeNode(object):
             self.depth = self.parent.depth +1
 
     def MCTS(self):
-        print("time to figure out what time is!")
-        print(time.time())
-        print("okay")
+        # print("time to figure out what time is!")
+        # print(time.time())
+        # print("okay")
         start = time.time()
 
         while(time.time() - start <= self.UCT_TIME):
-            print("calling UCT")
+            # print("calling UCT")
             self.UCT()
 
-        return self.getBestVisitAcion()
+        return self.GetBestVisitAcion()
 
     def Playout(self):
 
 
-        print("Playout being called ")
+        # print("Playout being called ")
 
-        print("clearing my acitons")
+        # print("clearing my acitons")
         self.m_action.clear()
-        print("clearing op acitons")
+        # print("clearing op acitons")
         self.op_action.clear()
 
-        print("checking selected_my_actions")
-        print("selected my actions: ",self.selected_my_actions)
-        for action in self.selected_my_actions:
-            self.m_action.append(action)
+        # print("checking selected_my_actions")
+        # print("selected my actions: ",self.selected_my_actions)
+        for i in range(len(self.selected_my_actions)):
+            self.m_action.add(self.selected_my_actions[i])
 
-        print("I mean the first for loop passed")
-        print("let's check shall we: ", len(self.selected_my_actions))
+        # print("I mean the first for loop passed")
+        # print("let's check shall we: ", len(self.selected_my_actions))
         for i in range(5-len(self.selected_my_actions)):
-            print("the second for loop passed")
+            # print("the second for loop passed")
             index = random.randint(0,len(self.my_actions)-1)
-            print("Our index: ",index)
-            print("Our #my actions: ",len(self.my_actions))
-            self.m_action.append(self.my_actions[index])
-            print("m actions: ",self.m_action)
+            # print("Our index: ",index)
+            # print("Our #my actions: ",len(self.my_actions))
+            # print(self.my_actions[0])
+            # print(self.m_action)
+            self.m_action.add(self.my_actions[index])
+            # print("m actions: ",self.m_action)
 
-        print("a fallen world they say")
+        # print("a fallen world they say")
         for i in range(5):
-            print("the third for loop passed")
+            # print("the third for loop passed")
             index = random.randint(0,len(self.op_actions)-1)
-            print("Our index: ",index)
-            print("Our #my actions: ",len(self.op_actions))
-            self.op_action.append(self.op_actions[index])
-            print("op actions: ",self.op_action)
+            # print("Our index: ",index)
+            # print("Our #my actions: ",len(self.op_actions))
+            self.op_action.add(self.op_actions[index])
+            # print("op actions: ",self.op_action)
 
-        print("calling new frame data")
-        print(self.frame_data)
-        print(self.player_num)
-        print(self.m_action)
-        print(self.op_action)
-        print(self.SIMULATION_TIME)
-        print(self.simulator)
-        print(self.frame_data, self.player_num, None, None, 17)
-        print("why stuff")
+        # print("calling new frame data")
+        # print(self.frame_data)
+        # print(self.player_num)
+        # print(self.m_action)
+        # print(self.op_action)
+        # print(self.SIMULATION_TIME)
+        # print(self.simulator)
+        # print(self.frame_data, self.player_num, None, None, 17)
+        # print("why stuff")
         
         # new_frame_data = self.simulator.simulate(self.frame_data,self.player_num,self.m_action,self.op_action,self.SIMULATION_TIME)
         new_frame_data = self.simulator.simulate(self.frame_data,self.player_num,self.m_action,self.op_action,self.SIMULATION_TIME)
 
-        print("new frame data succefull!")
+        # print("new frame data succefull!")
 
         return self.GetScore(new_frame_data)
 
     def UCT(self):
-        print("UCT being called: ")
+        # print("UCT being called: ")
         selected_node = None
         bestUcb = -999999.0
-        print("for loop: ")
+        # print("for loop: ")
         if self.children:
             for child in self.children:
-                print("we failed")
+                # print("we failed")
                 if child.games == 0:
-                    print("child has no games")
-                    child.ucb = 9999.0 + random.randint(50)
+                    # print("child has no games")
+                    # print("hello: ",random.randint(0,2))
+                    child.ucb = 9999.0 + random.randint(0,50)
+                    # print("setting child ucb: ")
                 else:
-                    print("get ucb failed")
-                    child.ucb = self.GetUcb(child.score / child.games, games, child.games)
+                    # print("get ucb failed")
+                    child.ucb = self.GetUCB(child.score / child.games, self.games, child.games)
+                    # print("child ucb works?")
 
                 if bestUcb < child.ucb:
                     selected_node = child
@@ -131,27 +139,27 @@ class TreeNode(object):
             selected_node = self
 
         score = 0.0
-        print("checking if selected node: ")
+        # print("checking if selected node: ")
         if selected_node.games == 0:
-            print("rollout")
+            # print("rollout")
             score = selected_node.Playout()
         else:
-            print("the if statement failed")
+            # print("the if statement failed")
             if not selected_node.children:
-                print("selected node does not have any children")
+                # print("selected node does not have any children")
                 if selected_node.depth <self.UCT_TREE_DEPTH:
-                    print("depth is less than the preset value")
+                    # print("depth is less than the preset value")
                     if self.UCT_CREATE_NODE_THRESHOULD <= selected_node.games:
-                        print("the thresholdis less than the number of games")
-                        print("calling create node")
+                        # print("the thresholdis less than the number of games")
+                        # print("calling create node")
                         selected_node.CreateNode()
                         selected_node.isCreateNode = True
                         score = selected_node.UCT()
                     else:
-                        print("doing a playout")
+                        # print("doing a playout")
                         score = selected_node.Playout()
                 else:
-                    print("doing a playout 2")
+                    # print("doing a playout 2")
                     score = selected_node.Playout()
             else:
                 if selected_node.depth < self.UCT_TREE_DEPTH:
@@ -168,17 +176,26 @@ class TreeNode(object):
         return score
     
     def CreateNode(self):
+        # print("Create Node is being called")
 
         for i in range(len(self.my_actions)):
+            # print("is something wrong")
 
-            my = collections.deque()
+            my_selected_actions = []
+            
+            # print(self.selected_my_actions)
 
             for action in self.selected_my_actions:
-                my.append(action)
 
-            my.append(self.my_actions[i])
+                # print("action, let's see if this works :",action)
+                my_selected_actions.append(action)
 
-            self.children.append(TreeNode(self.gateway,self.frame_data,self.my_actions,self.op_actions,self.game_data,self.player_num,self.cc,my))
+            # print("adding the action")
+            my_selected_actions.append(self.my_actions[i])
+
+
+            child_node = TreeNode(self.gateway,self.frame_data,self,self.my_actions,self.op_actions,self.game_data,self.player_num,self.cc,my_selected_actions)
+            self.children.append(child_node)
 
     def GetBestVisitAction(self):
         
@@ -187,7 +204,7 @@ class TreeNode(object):
 
         for i in range(len(self.children)):
             if DEBUG_MODE:
-                print("Score is : ", self.children[i].score / self.children[i].games, ", Number of trials: " ,self.children[i].games, ", UCB: ", self.children[i].ucb, ", Action: ",self.my_actions[i]) 
+                print("Score is : ", self.children[i].score / self.children[i].games, ", Number of trials: " ,self.children[i].games, ", UCB: ", self.children[i].ucb, ", Action: ",self.my_actions.element(i)) 
 
             if best_games < self.children[i].games:
                 best_games = self.children[i].games
@@ -223,10 +240,16 @@ class TreeNode(object):
         my_char = self.frame_data.getCharacter(self.player_num)
         op_char = self.frame_data.getCharacter(not self.player_num)
 
-        return (my_char.getHP() - self.my_original_hp ) - (op_char.getHP() - self.op_original_hp) 
+        return (my_char.getHp() - self.my_original_hp ) - (op_char.getHp() - self.op_original_hp) 
 
-    def GetUCB(self,score,n,ni):
-        return self.score  + self.UCB_C + math.sqrt( (2.0 * math.log(n) )/ ni )
+    def GetUCB(self,score,n,n_i):
+        # print("GET UCB BEING CALLED")
+        # print("score: ",self.score)
+        # print("usb_c: ",self.UCB_C)
+        # print("log stuff",math.log(n))
+        # print("n_i: ",n_i)
+        #
+        return self.score  + self.UCB_C + math.sqrt( (2.0 * math.log(n) )/ n_i )
 
     def __str__(self):
         print("Total number of trails: ", self.games)

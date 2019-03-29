@@ -10,8 +10,9 @@ class MCTS(object):
 
     def __init__(self, gateway):
         self.gateway = gateway
-        self.my_actions = collections.deque()
-        self.op_actions = collections.deque()
+        self.my_actions = []
+        self.op_actions = []
+        self.ACTION = self.gateway.jvm.enumerate.Action
 
 
     def close(self):
@@ -46,14 +47,15 @@ class MCTS(object):
             self.is_game_just_started = True
             self.my_char = self.frame_data.getCharacter(self.player_num)
             self.op_char = self.frame_data.getCharacter(not self.player_num)
-            self.action_air = ["AIR_GUARD","AIR_A","AIR_B","AIR_DA","AIR_DB","AIR_FA","AIR_FB","AIR_UA",
-                    "AIR_UB","AIR_D_DF_FA","AIR_D_DF_FB","AIR_F_DF_DFA","AIR_F_D_DFB","AIR_D_DB_BA",
-                    "AIR_D_DB_BB"]
-            self.action_ground = [ "STAND_D_DB_BA", "BACK_STEP","FORWARD_WALK","DASH","JUMP","FOR_JUMP",
-                    "BACK_JUMP","STAND_GUARD","CROUCH_GUARD","THROW_A","THROW_B","STAND_A","STAND_B",
-                    "CROUCH_A","CROUCH_B","STAND_FA","STAND_FB","CROUCH_FA","CROUCH_FB","STAND_D_DF_FA",
-                    "STAND_D_DF_FB","STAND_F_D_DFA","STAND_F_D_DFB","STAND_D_DB_BB"]
-            self.sp_skill = "STAND_D_DF_FC"
+
+            self.action_air = [ self.ACTION.AIR_GUARD , self.ACTION.AIR_A ,self.ACTION.AIR_B ,self.ACTION.AIR_DA, self.ACTION.AIR_DB ,self.ACTION.AIR_FA ,self.ACTION.AIR_FB ,self.ACTION.AIR_UA ,self.ACTION.AIR_UB ,self.ACTION.AIR_D_DF_FA ,self.ACTION.AIR_D_DF_FB ,self.ACTION.AIR_F_D_DFA ,self.ACTION.AIR_F_D_DFB ,self.ACTION.AIR_D_DB_BA , self.ACTION.AIR_D_DB_BB]
+
+            self.action_ground = [ self.ACTION.STAND_D_DB_BA, self.ACTION.BACK_STEP,self.ACTION.FORWARD_WALK,self.ACTION.DASH,self.ACTION.JUMP,self.ACTION.FOR_JUMP,
+                    self.ACTION.BACK_JUMP,self.ACTION.STAND_GUARD,self.ACTION.CROUCH_GUARD,self.ACTION.THROW_A,self.ACTION.THROW_B,self.ACTION.STAND_A,self.ACTION.STAND_B,
+                    self.ACTION.CROUCH_A,self.ACTION.CROUCH_B,self.ACTION.STAND_FA,self.ACTION.STAND_FB,self.ACTION.CROUCH_FA,self.ACTION.CROUCH_FB,self.ACTION.STAND_D_DF_FA,
+                    self.ACTION.STAND_D_DF_FB,self.ACTION.STAND_F_D_DFA,self.ACTION.STAND_F_D_DFB,self.ACTION.STAND_D_DB_BB]
+
+            self.sp_skill = self.ACTION.STAND_D_DF_FC
 
             self.my_motion_data = self.game_data.getMotionData(self.player_num)
             self.op_motion_data = self.game_data.getMotionData(not self.player_num)
@@ -95,22 +97,22 @@ class MCTS(object):
             self.input_key.empty()
             self.cc.skillCancel()
 
-            print("calling MCTS Prep")
+            # print("calling MCTS Prep")
             self.MCTSPrepare()
-            print("okay calling root_node")
-            print(self.simulator_ahead_frame_data)
-            print(self.my_actions)
-            print(self.op_actions)
-            print(self.game_data)
-            print(self.player_num)
+            # print("okay calling root_node")
+            # print(self.simulator_ahead_frame_data)
+            # print(self.my_actions)
+            # print(self.op_actions)
+            # print(self.game_data)
+            # print(self.player_num)
             root_node = TreeNode(self.gateway,self.simulator_ahead_frame_data,None,self.my_actions,self.op_actions,self.game_data,self.player_num,self.cc)
 
-            print("MCTS being called")
+            # print("MCTS being called")
             best_action = root_node.MCTS()
             if self.DEBUG_MODE:
                 print(root_node)
 
-            self.cc.commandCall(best_action)
+            self.cc.commandCall(best_action.name())
 
     def MCTSPrepare(self):
         print(self.FRAME_AHEAD)
@@ -120,62 +122,62 @@ class MCTS(object):
         self.my_char = self.simulator_ahead_frame_data.getCharacter(self.player_num)
         self.op_char =  self.simulator_ahead_frame_data.getCharacter(not self.player_num)
 
-        print("Getting my actions")
+        # print("Getting my actions")
         self.SetMyAction()
-        print("Getting op actions")
+        # print("Getting op actions")
         self.SetOpAction()
 
     def SetMyAction(self):
 
 
-        print("clearing my actions")
+        # print("clearing my actions")
 
-        self.my_actions.clear()
+        self.my_actions = []
 
-        print("getting eneregy")
+        # print("getting eneregy")
 
         energy = self.my_char.getEnergy()
 
         #actions.add(self.gateway.jvm.enumerate.Action.)
 
-        print("checkig if AIR ")
+        # print("checkig if AIR ")
         if str(self.my_char.getState()) == "AIR":
-            print("start of the for loop")
+            # print("start of the for loop")
             for i in range(len(self.action_air)):
-                print("checking if we have enough energy")
-                if abs(self.my_motion_data[self.gateway.jvm.enumerate.Action.valueOf(self.action_air[i]).ordinal()].getAttackStartAddEnergy()) <= energy:
+                # print("checking if we have enough energy")
+                if abs(self.my_motion_data[self.gateway.jvm.enumerate.Action.valueOf(self.action_air[i].name()).ordinal()].getAttackStartAddEnergy()) <= energy:
                     self.my_actions.append(self.action_air[i])
         else:
-            print("we are not in the air ")
-            print("checking the motion stuff")
-            move_index = self.gateway.jvm.enumerate.Action.valueOf(self.sp_skill).ordinal()
-            print("trying motion data: ",abs(self.my_motion_data[move_index].getAttackStartAddEnergy()))
+            # print("we are not in the air ")
+            # print("checking the motion stuff")
+            move_index = self.gateway.jvm.enumerate.Action.valueOf(self.sp_skill.name()).ordinal()
+            # print("trying motion data: ",abs(self.my_motion_data[move_index].getAttackStartAddEnergy()))
             if abs(self.my_motion_data[move_index].getAttackStartAddEnergy()) <= energy:
-                print("the if worked")
+                # print("the if worked")
                 self.my_actions.append(self.sp_skill)
-                print("so did the append!")
+                # print("so did the append!")
 
             for i in range(len(self.action_ground)):
-                if abs(self.my_motion_data[self.gateway.jvm.enumerate.Action.valueOf(self.action_ground[i]).ordinal()].getAttackStartAddEnergy()) <= energy:
+                if abs(self.my_motion_data[self.gateway.jvm.enumerate.Action.valueOf(self.action_ground[i].name()).ordinal()].getAttackStartAddEnergy()) <= energy:
                     self.my_actions.append(self.action_ground[i])
 
     def SetOpAction(self):
 
-        self.op_actions.clear()
+        self.op_actions = []
 
         energy = self.op_char.getEnergy()
 
 
         if str(self.op_char.getState()) == "AIR":
             for i in range(len(self.action_air)):
-                if abs(self.op_motion_data[self.gateway.jvm.enumerate.Action.valueOf(self.action_air[i]).ordinal()].getAttackStartAddEnergy()) <= energy:
+                if abs(self.op_motion_data[self.gateway.jvm.enumerate.Action.valueOf(self.action_air[i].name()).ordinal()].getAttackStartAddEnergy()) <= energy:
                     self.op_actions.append(self.action_air[i])
         else:
-            if abs(self.op_motion_data[self.gateway.jvm.enumerate.Action.valueOf(self.sp_skill).ordinal()].getAttackStartAddEnergy()) <= energy:
+            if abs(self.op_motion_data[self.gateway.jvm.enumerate.Action.valueOf(self.sp_skill.name()).ordinal()].getAttackStartAddEnergy()) <= energy:
                 self.op_actions.append(self.sp_skill)
 
             for i in range(len(self.action_ground)):
-                if abs(self.op_motion_data[self.gateway.jvm.enumerate.Action.valueOf(self.action_ground[i]).ordinal()].getAttackStartAddEnergy()) <= energy:
+                if abs(self.op_motion_data[self.gateway.jvm.enumerate.Action.valueOf(self.action_ground[i].name()).ordinal()].getAttackStartAddEnergy()) <= energy:
                     self.op_actions.append(self.action_ground[i])
 
 
