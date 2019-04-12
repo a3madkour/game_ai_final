@@ -84,7 +84,7 @@ class TreeNode(object):
 
         # print("I mean the first for loop passed")
         # print("let's check shall we: ", len(self.selected_my_actions))
-        for i in range(5-len(self.selected_my_actions)):
+        for i in range(10-len(self.selected_my_actions)):
             # print("the second for loop passed")
             index = random.randint(0,len(self.my_actions)-1)
             # print("Our index: ",index)
@@ -95,7 +95,7 @@ class TreeNode(object):
             # print("m actions: ",self.m_action)
 
         # print("a fallen world they say")
-        for i in range(5):
+        for i in range(10):
             # print("the third for loop passed")
             index = random.randint(0,len(self.op_actions)-1)
             # print("Our index: ",index)

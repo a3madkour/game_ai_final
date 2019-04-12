@@ -1,99 +1,309 @@
 from py4j.java_gateway import get_field
-from State
-import numpy as np
-import random
+import collections
+from TreeNode import TreeNode
+from State import State
+from RL import RL, ActionValue
+import math
 
-class ActionValue:
+class MCTS(object):
 
-    def __init__(self,action_index,action_weight,value):
-        self.action_index = action_index
-        self.action_weight = action_weight
-        self.value - value
-
-    def GetActionIndex(self):
-        return self.action_index
-
-    def SetActionIndex(self,action_index):
-        self.action_index = action_index
-
-    def GetActionWeight(self):
-        return self.action_weight
-
-    def SetActionWeight(self,action_weight):
-        self.action_weight  = action_weight
+    FRAME_AHEAD = 14
+    DEBUG_MODE = True
+    epsilon = 0.01
+    discount_factor = 0.95
+    alpha = 0.2
+    lamb = 0.1
+    action_weights_number = 6
+    use_exp_replay = False
 
 
-
-class RLAgent(object):
-    def __init__(self, gateway,state,epsilon,discount_factor,alpha,lamb,feat_len,player_num,use_exp_replay,debug):
-        self.state = state
-        self.simulator = self.state.game_data
-        self.epsilon = epsilon
-        self.alpha = alpha
-        self.lamb = lamb
-        self.debug = debug
-        self.trace = [0.0] * feat_len
-        self.use_exp_replay = use_exp_replay
-        self.player_num = player_num
-
-    def FillTrace(self,feat):
-        for i in range(feat):
-            if (feat[i] > 0):
-                trace[i] += 1
-
-    def DecayTraces(self,feat):
-        if self.lamb > 0:
-            for i in range(feat):
-                if (feat[i] > 0):
-                    trace[i] = trace[i] * self.discount_factor * self.lamb
-                else if feat[i] == 0:
-                    trace[i] = 0
-            return trace
-        else:
-            return feat
-
-    def SetMultipleWeights(weights):
-        self.actions_weights = weights
-
-    def GetActionFromPolicy(reward):
-
-        my_actions = []
-        my_orginial_hp = self.state.my_char.getHp()
-        my_op_orginial_hp = self.state.op_char.getHp()
-
-        prob = random.random()
-
-        if prob <= self.epsilon:
-
-            random_action_index = random.randint(0,(self.state.my_actions))
-            my_actions = []
-
-            random_action = self.state.my_actions[random_action_index]
-
-            my_actions.add(random_action)
+    def __init__(self, gateway):
+        self.gateway = gateway
+        self.my_actions = []
+        self.op_actions = []
+        self.ACTION = self.gateway.jvm.enumerate.Action
 
 
-            q_val = self.GetDotProduct(random_action,reward,my_actions)
+    def close(self):
+        pass
 
-            action =  ActionValue(random_action_index,self.state.my_actions_index[random_action_index],q_val)
+    def getInformation(self, frame_data):
+        # Load the frame data every time getInformation gets called
+            self.state.frame_data = frame_data
+            self.cc.setFrameData(self.frame_data, self.player_num)
+            self.state.my_char = self.frame_data.getCharacter(self.player_num)
+            self.state.op_char = self.frame_data.getCharacter(not self.player_num)
 
-            return action
-        
-        max_q_val = - float("inf")
-        chosen_action = 0
-        chosen_action_index = 0
-        for i in range(self.state.my_actions_index):
-            my_actions = []
-            my_actions.append(self.state.my_actions[i])
-            q_val = self.GetDotProduct(self.state.my_actions_index,reward,my_actions)
-            if q_val > max_q_val:
-                chosen_action = self.my_actions_index[i]
-                chosen_action_index = i
-                max_q_val = q_val
+    # please define this method when you use FightingICE version 3.20 or later
+    def roundEnd(self, x, y, z):
+        print(x)
+        print(y)
+        print(z)
 
-        return ActionValue(chosen_action_index,chosen_action,max_q_val)
+    # please define this method when you use FightingICE version 4.00 or later
+    def getScreenData(self, sd):
+        pass
+
+
+    def initialize(self, game_data, player_num):
+        # Initializng the command center, the simulator and some other things
+            self.input_key = self.gateway.jvm.struct.Key()
+            self.frame_data = self.gateway.jvm.struct.FrameData()
+            self.cc = self.gateway.jvm.aiinterface.CommandCenter()
+            self.simulate_time = 60
+            self.player_num = player_num
+            self.game_data = game_data
+            self.simulator = self.game_data.getSimulator()
+            self.state  = State(self.gateway,game_data,self.cc,player_num)
+            self.is_game_just_started = True
+            self.current_action = ActionValue(0,0,0)
+            self.weight_path_p1 = None
+            self.weight_path_p2 = None
+            self.in_behaviour = False
+            self.my_last_hp = self.state.my_char.getHp()
+            self.op_last_hp = self.state.op_char.getHp()
+
+            self.agent = RL(self.state,self.epsilon,self.gamma,self.alpha,self.lamb,self.state.features_number,self.player_number,self.use_exp_replay)
+
+            self.action_air = [ self.ACTION.AIR_GUARD , self.ACTION.AIR_A ,self.ACTION.AIR_B ,self.ACTION.AIR_DA, self.ACTION.AIR_DB ,self.ACTION.AIR_FA ,self.ACTION.AIR_FB ,self.ACTION.AIR_UA ,self.ACTION.AIR_UB ,self.ACTION.AIR_D_DF_FA ,self.ACTION.AIR_D_DF_FB ,self.ACTION.AIR_F_D_DFA ,self.ACTION.AIR_F_D_DFB ,self.ACTION.AIR_D_DB_BA , self.ACTION.AIR_D_DB_BB]
+
+            self.action_ground = [ self.ACTION.STAND_D_DB_BA, self.ACTION.BACK_STEP,self.ACTION.FORWARD_WALK,self.ACTION.DASH,self.ACTION.JUMP,self.ACTION.FOR_JUMP,
+                    self.ACTION.BACK_JUMP,self.ACTION.STAND_GUARD,self.ACTION.CROUCH_GUARD,self.ACTION.THROW_A,self.ACTION.THROW_B,self.ACTION.STAND_A,self.ACTION.STAND_B,
+                    self.ACTION.CROUCH_A,self.ACTION.CROUCH_B,self.ACTION.STAND_FA,self.ACTION.STAND_FB,self.ACTION.CROUCH_FA,self.ACTION.CROUCH_FB,self.ACTION.STAND_D_DF_FA,
+                    self.ACTION.STAND_D_DF_FB,self.ACTION.STAND_F_D_DFA,self.ACTION.STAND_F_D_DFB,self.ACTION.STAND_D_DB_BB]
+
+            self.sp_skill = self.ACTION.STAND_D_DF_FC
+
+            self.my_motion_data = self.game_data.getMotionData(self.player_num)
+            self.op_motion_data = self.game_data.getMotionData(not self.player_num)
+            self.my_actions = []
+            self.op_actions = []
+
+            self.agent.epsilon = self.epsilon
+            
+
+
+
+
+            return 0
+
+    def input(self):
+        # The input is set up to the global variable input_key
+            # which is modified in the processing part
+            return self.input_key
+
+    def processing(self):
+        # First we check whether we are at the end of the round
+            if self.frame_data.getEmptyFlag() or self.frame_data.getRemainingFramesNumber() <= 0:
+                self.is_game_just_started = True
+                return
+            if not self.is_game_just_started:
+                # Simulate the delay and look ahead 2 frames. The simulator class exists already in FightingICE
+                self.frame_data = self.simulator.simulate(self.frame_data, self.player_num, None, None, self.FRAME_AHEAD)
+            else:
+                # If the game just started, no point on simulating
+                    self.is_game_just_started = False
+            self.cc.setFrameData(self.frame_data, self.player_num)
+            self.state.Update(self.cc,self.frame_data,self.player_num)
+            
+            # distance = self.frame_data.getDistanceX()
+            # energy = my.getEnergy()
+            # my_x = my.getX()
+            # my_state = my.getState()
+            # opp_x = opp.getX()
+            # opp_state = opp.getState()
+            # xDifference = my_x - opp_x
+            if self.cc.getSkillFlag():
+                # If there is a previous "command" still in execution, then keep doing it
+                    self.input_key = self.cc.getSkillKey()
+                    return
+            # We empty the keys and cancel skill just in case
+            self.input_key.empty()
+            self.cc.skillCancel()
+
+            self.state.SetActions(self.frame_data,self.player_num)
+
+            reward = abs(self.op_last_hp - self.state.op.getHp()) - abs(self.my_last_hp - self.state.my_char.getHp())
+
+            self.my_last_hp = self.state.my_char.getHp()
+            self.op_last_hp = self.state.op_char.getHp()
+
+            next_action = self.agent.Update(self.frame_data,reward,self.current_action.action_weight)
+
+            self.current_action = next_action
+            chosen_action = self.state.my_actions[current_action.action_index]
+
+            self.ExecuteOption(chosen_action)
+
+
+
+    def ExecuteOption(self,action):
+        action_name = action.name()
+        selected_action = self.ACTION.NEUTRAL
+        if "BEHV" in action_name:
+            if "CAUTIOUS" in action_name:
+                self.action_air = [self.ACTION.AIR_GUARD]
+                self.action_ground = [self.ACTION.DASH,self.ACTION.NEUTRAL,self.ACTION.STAND_A,self.ACTION.CROUCH_B,self.ACTION.THROW_A,self.ACTION.STAND_B,self.ACTION.CROUCH_A]
+                self.op_action_air = [self.ACTION.AIR_B, self.ACTION.AIR_DB,self.ACTION.AIR_FB]
+                self.op_action_ground = [self.ACTION.STAND,self.ACTION.DASH,self.ACTION.STAND_A,self.ACTION.CROUCH_B,self.ACTION.STAND_B]
+                self.simulate_time = 60
+            elif "KICKER" in action_name: 
+                self.action_air = [self.ACTION.AIR_GUARD]
+                self.action_ground = [self.ACTION.STAND,self.ACTION.DASH,self.ACTION.FORWARD_WALK,self.ACTION_A,self.ACTION.CROUCH_B,self.ACTION.CROUCH_FB,self.ACTION.STAND_D_DB_BB]
+                self.op_action_air = [self.ACTION.AIR_B, self.ACTION.AIR_DB,self.ACTION.AIR_FB]
+                self.op_action_ground = [self.ACTION.STAND,self.ACTION.DASH,self.ACTION.CROUCH_FB]
+                self.simulate_time = 60
+            elif "ESCAPER" in action_name:
+                self.action_air = [self.ACTION.AIR_GUARD]
+                self.action_ground = [self.ACTION.BACK_STEP,self.ACTION.JUMP,self.ACTION.NEUTRAL,self.ACTION.BACK_JUMP,self.ACTION.FOR_JUMP]
+                self.op_action_air = [self.ACTION.AIR_B, self.ACTION.AIR_DB,self.ACTION.AIR_FB]
+                self.op_action_ground = [self.ACTION.STAND_A, self.ACTION.STAND_FA, self.ACTION.STAND_FB, self.ACTION.CROUCH_FB,self.ACTION.STAND_B]
+            elif "ATTACKER" in action_name:
+                self.action_air = [self.ACTION.AIR_GUARD]
+                self.action_ground = [self.ACTION.NEUTRAL, self.ACTION.DASH,self.ACTION.AIR_FA,self.ACTION_THROW_A,self.ACTION.STAND_B,self.ACTION.STAND_A,self.ACTION.CROUCH_A]
+                self.op_action_air = [self.ACTION.AIR_B, self.ACTION.AIR_DB,self.ACTION.AIR_FB]
+                self.op_action_ground = [self.ACTION.DASH, self.ACTION.STAND ]
+                self.simulate_time = 60
+            elif "GRABBER" in action_name:
+                self.action_air = [self.ACTION.AIR]
+                self.action_ground = [self.ACTION.FORWARD_WALK,self.ACTION.DASH,self.ACTION.STAND_A,self.ACTION.THROW_A]
+                self.op_action_air = [self.ACTION.AIR]
+                self.op_action_ground = [self.ACTION.STAND,self.ACTION.DASH,self.ACTION.STAND_A]
+                self.simulate_time = 20
+
+            elif "ANTIAIR" in action_name:
+
+                self.action_air = [self.ACTION.AIR_GUARD]
+                self.action_ground = [self.ACTION.FORWARD_WALK,self.ACTION.CROUCH_FA,self.ACTION.STAND_FB]
+                self.op_action_air = [self.ACTION.NEUTRAL]
+                self.op_action_ground = [self.ACTION.NEUTRAL]
+                self.simulate_time = 20
+
+            elif "STOMPER" in action_name:
+
+                self.action_air = [self.ACTION.AIR_F_D_DFB,self.ACTION.AIR_D_DB_BA,self.ACTION.AIR_FB,self.ACTION.AIR_DB, self.ACTION.AIR_B]
+                self.action_ground = [self.ACTION.NEUTRAL, self.ACTION.THROW_A]
+                self.op_action_air = [self.ACTION.AIR]
+                self.op_action_ground = [self.ACTION.NEUTRAL]
+                self.simulate_time = 30
+
+            elif "AIRDOMINATOR" in action_name:
+
+                self.action_air = [self.ACTION.AIR_A,self.ACTION.AIR_B,self.ACTION.AIR_FA,self.ACTION.AIR_FB]
+                self.action_ground = [self.ACTION.NEUTRAL]
+                self.op_action_air = [self.ACTION.AIR]
+                self.op_action_ground = [self.ACTION.NEUTRAL]
+                self.simulate_time = 30
+
+
+                self.simulate_time = 60
+
+            elif "MCTS" in action_name:
+                self.action_air = [ self.ACTION.AIR_GUARD , self.ACTION.AIR_A ,self.ACTION.AIR_B ,self.ACTION.AIR_DA, self.ACTION.AIR_DB ,self.ACTION.AIR_FA ,self.ACTION.AIR_FB ,self.ACTION.AIR_UA ,self.ACTION.AIR_UB ,self.ACTION.AIR_D_DF_FA ,self.ACTION.AIR_D_DF_FB ,self.ACTION.AIR_F_D_DFA ,self.ACTION.AIR_F_D_DFB ,self.ACTION.AIR_D_DB_BA , self.ACTION.AIR_D_DB_BB]
+
+                self.action_ground = [ self.ACTION.STAND_D_DB_BA, self.ACTION.BACK_STEP,self.ACTION.FORWARD_WALK,self.ACTION.DASH,self.ACTION.JUMP,self.ACTION.FOR_JUMP,
+                        self.ACTION.BACK_JUMP,self.ACTION.STAND_GUARD,self.ACTION.CROUCH_GUARD,self.ACTION.THROW_A,self.ACTION.THROW_B,self.ACTION.STAND_A,self.ACTION.STAND_B,
+                        self.ACTION.CROUCH_A,self.ACTION.CROUCH_B,self.ACTION.STAND_FA,self.ACTION.STAND_FB,self.ACTION.CROUCH_FA,self.ACTION.CROUCH_FB,self.ACTION.STAND_D_DF_FA,
+                        self.ACTION.STAND_D_DF_FB,self.ACTION.STAND_F_D_DFA,self.ACTION.STAND_F_D_DFB,self.ACTION.STAND_D_DB_BB]
+                
+                self.op_action_air = self.action_air
+                self.op_action_ground = self.action_ground
+                self.simulate_time = 60
+
+            self.MCTSPrepare()
+
+            root_node = TreeNode(self.gateway,self.simulator_ahead_frame_data,None,self.my_actions,self.op_actions,self.game_data,self.player_num,self.cc)
+
+            best_action = root_node.MCTS()
+            self.cc.commandCall(best_action.name())
+        else if "EXP" in action_name:
+            if (not self.ACTION.NEUTRAL in attack_name):
+                self.cc.commandCall(attack_name)
+
 
             
 
-        
 
+
+
+                    
+
+
+
+
+
+
+
+    def MCTSPrepare(self):
+        # print(self.FRAME_AHEAD)
+        self.simulator_ahead_frame_data = self.simulator.simulate(self.frame_data, self.player_num, None, None, self.FRAME_AHEAD)
+
+
+        self.my_char = self.simulator_ahead_frame_data.getCharacter(self.player_num)
+        self.op_char =  self.simulator_ahead_frame_data.getCharacter(not self.player_num)
+
+        # print("Getting my actions")
+        self.SetMyAction()
+        # print("Getting op actions")
+        self.SetOpAction()
+
+    def SetMyAction(self):
+
+
+        # print("clearing my actions")
+
+        self.my_actions = []
+
+        # print("getting eneregy")
+
+        energy = self.my_char.getEnergy()
+
+        #actions.add(self.gateway.jvm.enumerate.Action.)
+
+        # print("checkig if AIR ")
+        if str(self.my_char.getState()) == "AIR":
+            # print("start of the for loop")
+            for i in range(len(self.action_air)):
+                # print("checking if we have enough energy")
+                if abs(self.my_motion_data[self.gateway.jvm.enumerate.Action.valueOf(self.action_air[i].name()).ordinal()].getAttackStartAddEnergy()) <= energy:
+                    self.my_actions.append(self.action_air[i])
+        else:
+            # print("we are not in the air ")
+            # print("checking the motion stuff")
+            move_index = self.gateway.jvm.enumerate.Action.valueOf(self.sp_skill.name()).ordinal()
+            # print("trying motion data: ",abs(self.my_motion_data[move_index].getAttackStartAddEnergy()))
+            if abs(self.my_motion_data[move_index].getAttackStartAddEnergy()) <= energy:
+                # print("the if worked")
+                self.my_actions.append(self.sp_skill)
+                # print("so did the append!")
+
+            for i in range(len(self.action_ground)):
+                if abs(self.my_motion_data[self.gateway.jvm.enumerate.Action.valueOf(self.action_ground[i].name()).ordinal()].getAttackStartAddEnergy()) <= energy:
+                    self.my_actions.append(self.action_ground[i])
+
+    def SetOpAction(self):
+
+        self.op_actions = []
+
+        energy = self.op_char.getEnergy()
+
+
+        if str(self.op_char.getState()) == "AIR":
+            for i in range(len(self.action_air)):
+                if abs(self.op_motion_data[self.gateway.jvm.enumerate.Action.valueOf(self.action_air[i].name()).ordinal()].getAttackStartAddEnergy()) <= energy:
+                    self.op_actions.append(self.action_air[i])
+        else:
+            if abs(self.op_motion_data[self.gateway.jvm.enumerate.Action.valueOf(self.sp_skill.name()).ordinal()].getAttackStartAddEnergy()) <= energy:
+                self.op_actions.append(self.sp_skill)
+
+            for i in range(len(self.action_ground)):
+                if abs(self.op_motion_data[self.gateway.jvm.enumerate.Action.valueOf(self.action_ground[i].name()).ordinal()].getAttackStartAddEnergy()) <= energy:
+                    self.op_actions.append(self.action_ground[i])
+
+
+    class Java:
+            implements = ["aiinterface.AIInterface"]
+
+
+if __name__ == "__main__":
+    print("Hi")
