@@ -52,7 +52,7 @@ class RL(object):
             for i in range(feat):
                 if (feat[i] > 0):
                     trace[i] = trace[i] * self.discount_factor * self.lamb
-                else if feat[i] == 0:
+                elif feat[i] == 0:
                     trace[i] = 0
             return trace
         else:
@@ -113,7 +113,7 @@ class RL(object):
         active_features  = 0
         for i in range(len(features)):
             if features[i] == 1:
-                active_features += 
+                active_features += 1
 
         new_alpha = 0
         if active_features == 0:
@@ -131,7 +131,7 @@ class RL(object):
             if len(self.storage) >= self.max_batch_size:
                 self.BatchUpdates(batch_update_size)
 
-            self.storage.add(Transition(self.state.last_features,factor_1,action_index)
+            self.storage.add(Transition(self.state.last_features,factor_1,action_index))
 
         self.last_value = next_action.value
         self.state.last_features =  self.state.features

@@ -5,7 +5,7 @@ from State import State
 from RL import RL, ActionValue
 import math
 
-class MCTS(object):
+class RLAgent(object):
 
     FRAME_AHEAD = 14
     DEBUG_MODE = True
@@ -216,7 +216,7 @@ class MCTS(object):
 
             best_action = root_node.MCTS()
             self.cc.commandCall(best_action.name())
-        else if "EXP" in action_name:
+        elif "EXP" in action_name:
             if (not self.ACTION.NEUTRAL in attack_name):
                 self.cc.commandCall(attack_name)
 
