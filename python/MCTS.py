@@ -45,7 +45,9 @@ class MCTS(object):
             self.game_data = game_data
             self.simulator = self.game_data.getSimulator()
             self.is_game_just_started = True
+            print("MY self char")
             self.my_char = self.frame_data.getCharacter(self.player_num)
+            print(self.my_char)
             self.op_char = self.frame_data.getCharacter(not self.player_num)
 
             self.action_air = [ self.ACTION.AIR_GUARD , self.ACTION.AIR_A ,self.ACTION.AIR_B ,self.ACTION.AIR_DA, self.ACTION.AIR_DB ,self.ACTION.AIR_FA ,self.ACTION.AIR_FB ,self.ACTION.AIR_UA ,self.ACTION.AIR_UB ,self.ACTION.AIR_D_DF_FA ,self.ACTION.AIR_D_DF_FB ,self.ACTION.AIR_F_D_DFA ,self.ACTION.AIR_F_D_DFB ,self.ACTION.AIR_D_DB_BA , self.ACTION.AIR_D_DB_BB]

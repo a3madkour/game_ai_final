@@ -59,5 +59,5 @@ public enum Action {
 	AIR_F_D_DFB,
 	AIR_D_DB_BA,
 	AIR_D_DB_BB,
-	STAND_D_DF_FC,
+	STAND_D_DF_FC
 }
