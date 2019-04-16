@@ -9,7 +9,7 @@ class ActionValue:
         self.action_index = action_index
         self.action_weight = action_weight
         self.value = value
-        print("the init is done")
+        # print("the init is done")
 
     def GetActionIndex(self):
         return self.action_index
@@ -33,9 +33,9 @@ class RL(object):
 
     def __init__(self, gateway,state,epsilon,gamma,alpha,lamb,feat_len,player_num,use_exp_replay):
 
-        print("Initialize Agent")
+        # print("Initialize Agent")
         self.state = state
-        print("setting up simulator")
+        # print("setting up simulator")
         self.simulator = self.state.game_data.getSimulator()
         self.epsilon = epsilon
         self.alpha = alpha
@@ -48,9 +48,9 @@ class RL(object):
         self.storage = []
 
     def FillTrace(self,feat):
-        print("Fill trace being called")
-        print(len(feat))
-        print(len(self.trace))
+        # print("Fill trace being called")
+        # print(len(feat))
+        # print(len(self.trace))
         for i in range(len(feat)):
                 self.trace[i] += 1
 
@@ -70,7 +70,7 @@ class RL(object):
 
     def GetActionFromPolicy(self,reward):
 
-        print("Get Action From Policy is being called")
+        # print("Get Action From Policy is being called")
         my_actions = []
         my_orginial_hp = self.state.my_char.getHp()
         my_op_orginial_hp = self.state.op_char.getHp()
@@ -79,118 +79,125 @@ class RL(object):
 
         prob = random.random()
 
-        print("setting up vars is done")
-        print(prob)
-        print(self.epsilon)
+        # print("setting up vars is done")
+        # print(prob)
+        # print(self.epsilon)
 
         if prob <= self.epsilon:
 
-            print("in if, i.e. we are exploring")
+            # print("in if, i.e. we are exploring")
 
 
             random_action_index = random.randint(0,len(self.state.my_actions)-1)
 
-            print("random_action_index: ",random_action_index)
+            # print("random_action_index: ",random_action_index)
             my_actions = []
 
-            print("random_action: ",self.state.my_actions)
+            # print("random_action: ",self.state.my_actions)
             random_action = self.state.my_actions[random_action_index]
-            print("random_action: ",random_action)
+            # print("random_action: ",random_action)
 
             my_actions.append(random_action)
 
-            print("my_actions: ",my_actions)
+            # print("my_actions: ",my_actions)
 
 
-            print("getting the dot product")
+            # print("getting the dot product")
             q_val = self.GetDotProduct(random_action_index,reward,my_actions)
 
-            print("random_action_index: ",random_action_index)
-            print("self.state.my_actions_index[random_action_index]: ",self.state.my_actions_index[random_action_index])
-            print("q_val",q_val)
+            # print("random_action_index: ",random_action_index)
+            # print("self.state.my_actions_index[random_action_index]: ",self.state.my_actions_index[random_action_index])
+            # print("q_val",q_val)
             action =  ActionValue(random_action_index, self.state.my_actions_index[random_action_index] ,q_val)
 
             return action
         
         max_q_val = - float("inf")
-        print("max q val:", max_q_val)
+        # print("max q val:", max_q_val)
         chosen_action = 0
         chosen_action_index = 0
-        print("starting the for loop")
-        print(self.state.my_actions_index)
-        print(len(self.state.my_actions_index))
+        # print("starting the for loop")
+        # print(self.state.my_actions_index)
+        # print(len(self.state.my_actions_index))
         for i in range(len(self.state.my_actions_index)):
-            print(self.state.my_actions)
+            # print(self.state.my_actions)
             my_actions = []
             my_actions.append(self.state.my_actions[i])
-            print("Get dot product being called")
-            q_val = self.GetDotProduct(self.state.my_actions_index,reward,my_actions)
+            # print(self.state.my_actions_index[i])
+            # print("Get dot product being called")
+            q_val = self.GetDotProduct(self.state.my_actions_index[i],reward,my_actions)
+            # print("if being called")
+            # print(q_val,"the max", max_q_val)
             if q_val > max_q_val:
-                chosen_action = self.my_actions_index[i]
+                # print("we are in the if")
+                # print(i)
+                # print(i)
+                # print(self.state.my_actions_index[i])
+                chosen_action = self.state.my_actions_index[i]
                 chosen_action_index = i
                 max_q_val = q_val
 
-        print("returning")
-        print(chosen_action)
-        print(chosen_action_index)
-        print(max_q_val)
+        # print("returning")
+        # print(chosen_action)
+        # print(chosen_action_index)
+        # print(max_q_val)
         return ActionValue(chosen_action_index,chosen_action,max_q_val)
 
     def Update(self,frame_data,reward,action_index):
 
 
-        print("Update being called")
+        # print("Update being called")
 
         weight = self.actions_weights[action_index]
-        print("calling get features being ")
+        # print("calling get features being ")
         features = self.state.GetFeatures(frame_data,reward)
-        print("back from get features being ")
+        # print("back from get features being ")
 
 
-        print("calling Fill Trace")
+        # print("calling Fill Trace")
 
         self.FillTrace(features)
 
-        print("back from Fill Trace")
+        # print("back from Fill Trace")
 
         self.state.features = features
 
-        print("calling get action from policy")
+        # print("calling get action from policy")
         next_action = self.GetActionFromPolicy(reward)
 
-        print("back from get action from policy")
+        # print("back from get action from policy")
 
         active_features  = 0
-        print(features)
-        print(len(features))
+        # print(features)
+        # print(len(features))
         for i in range(len(features)):
             if features[i] == 1:
                 active_features += 1
 
         new_alpha = 0
-        print("new_alpha: ",new_alpha)
+        # print("new_alpha: ",new_alpha)
         if active_features == 0:
             new_alpha = self.alpha
         else:
-            print(self.alpha)
-            print(active_features)
+            # print(self.alpha)
+            # print(active_features)
             new_alpha = self.alpha / active_features
-            print(new_alpha)
+            # print(new_alpha)
         
-        print("calc stuff")
-        print(reward)
-        print(self.gamma)
-        print(next_action.value)
+        # print("calc stuff")
+        # print(reward)
+        # print(self.gamma)
+        # print(next_action.value)
         td_target = reward + self.gamma * next_action.value
-        print("td_target: ",td_target)
+        # print("td_target: ",td_target)
         delta =  td_target - self.last_value
         factor_1  = new_alpha * delta
 
-        print("calling update weights")
+        # print("calling update weights")
 
         self.UpdateWeights(weight,factor_1,self.state.last_features)
 
-        print("back from update weights")
+        # print("back from update weights")
 
         if self.use_exp_replay:
             if len(self.storage) >= self.max_batch_size:
@@ -226,23 +233,23 @@ class RL(object):
 
     def GetDotProduct(self,q_action_index,reward,my_actions):
 
-        print("GET DOT PRODUCT called")
-        print(self.actions_weights)
-        print(q_action_index)
+        # print("GET DOT PRODUCT called")
+        # print(self.actions_weights)
+        # print(q_action_index)
         weight = self.actions_weights[q_action_index]
-        print("weight: ",weight)
+        # print("weight: ",weight)
         
         total = 0
-        print(len(weight))
-        print(weight)
-        print(self.state.features)
-        print(len(self.state.features))
-        print("now going through the loop")
+        # print(len(weight))
+        # print(weight)
+        # print(self.state.features)
+        # print(len(self.state.features))
+        # print("now going through the loop")
         for i in range(len(weight)):
-            print(i,": i")
+            # print(i,": i")
             total += weight[i] + self.state.features[i]
 
-        print("loop: ",total)
+        # print("loop: ",total)
         return total
         
     def GetScore(self,frame_data,my_original_hp,op_original_hp):
