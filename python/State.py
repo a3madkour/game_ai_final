@@ -3,7 +3,6 @@ from py4j.java_gateway import get_field
 
 
 class State(object):
-    #always assume we are ZEN
     features_num = 46
 
     def __init__(self,gateway,game_data,cc,player_num):
@@ -25,10 +24,10 @@ class State(object):
         self.op_motion = ''
         self.action_ground = []
         self.action_air = []
-        self.option_general = ['OPTION_MCTS']
+        self.option_general = ['OPTION_ALL_ACTIONS','OPTION_GUARD']
         self.option_air = []
-        self.option_op_ground = ['OPTION_KICKER']
-        self.option_op_air = ['OPTION_ANTIAIR']
+        self.option_op_ground = ['OPTION_KICK','OPTION_GRAB']
+        self.option_op_air = ['OPTION_ANTI-AIR']
 
         # print("player_num")
         # print(player_num)

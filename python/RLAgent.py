@@ -4,6 +4,7 @@ from TreeNode import TreeNode
 from State import State
 from RL import RL, ActionValue
 import math
+import pickle
 
 class RLAgent(object):
 
@@ -13,8 +14,9 @@ class RLAgent(object):
     gamma = 0.95
     alpha = 0.2
     lamb = 0.1
-    action_weights_number = 6
+    action_weights_number = 5
     use_exp_replay = False
+    weights_path = "pickled_weights.pkl"
 
 
     def __init__(self, gateway):
@@ -39,6 +41,14 @@ class RLAgent(object):
 
     # please define this method when you use FightingICE version 3.20 or later
     def roundEnd(self, x, y, z):
+        print("round ending")
+        print(self.weights_path)
+        f = open(self.weights_path,'wb')
+        print("the file is open")
+        print(self.agent.actions_weights)
+        print("dumping ")
+        pickle.dump(self.agent.actions_weights,f)
+        # f.close()
         print(x)
         print(y)
         print(z)
@@ -89,12 +99,9 @@ class RLAgent(object):
             self.agent = RL(self.gateway,self.state,self.epsilon,self.gamma,self.alpha,self.lamb,self.state.features_num,self.state.player_num,self.use_exp_replay)
 
 
-            self.action_air = [ self.ACTION.AIR_GUARD , self.ACTION.AIR_A ,self.ACTION.AIR_B ,self.ACTION.AIR_DA, self.ACTION.AIR_DB ,self.ACTION.AIR_FA ,self.ACTION.AIR_FB ,self.ACTION.AIR_UA ,self.ACTION.AIR_UB ,self.ACTION.AIR_D_DF_FA ,self.ACTION.AIR_D_DF_FB ,self.ACTION.AIR_F_D_DFA ,self.ACTION.AIR_F_D_DFB ,self.ACTION.AIR_D_DB_BA , self.ACTION.AIR_D_DB_BB]
+            self.action_air = []
 
-            self.action_ground = [ self.ACTION.STAND_D_DB_BA, self.ACTION.BACK_STEP,self.ACTION.FORWARD_WALK,self.ACTION.DASH,self.ACTION.JUMP,self.ACTION.FOR_JUMP,
-                    self.ACTION.BACK_JUMP,self.ACTION.STAND_GUARD,self.ACTION.CROUCH_GUARD,self.ACTION.THROW_A,self.ACTION.THROW_B,self.ACTION.STAND_A,self.ACTION.STAND_B,
-                    self.ACTION.CROUCH_A,self.ACTION.CROUCH_B,self.ACTION.STAND_FA,self.ACTION.STAND_FB,self.ACTION.CROUCH_FA,self.ACTION.CROUCH_FB,self.ACTION.STAND_D_DF_FA,
-                    self.ACTION.STAND_D_DF_FB,self.ACTION.STAND_F_D_DFA,self.ACTION.STAND_F_D_DFB,self.ACTION.STAND_D_DB_BB]
+            self.action_ground = []
 
             self.sp_skill = self.ACTION.STAND_D_DF_FC
 
@@ -104,18 +111,32 @@ class RLAgent(object):
             self.op_actions = []
 
             self.agent.epsilon = self.epsilon
+
+            print(self.weights_path)
+            print(self.agent.actions_weights)
+
+            self.SetWeights()
             
+
+
+
+
+            return 0
+
+    def SetWeights(self):
+        try :
+            f = open(self.weights_path,'r')
+            mutli_feat = pickle.load(f)
+            f.close()
+            self.agent.SetMultipleWeights(multi_feat)
+        except:
             multi_feat = []
             for i in range(self.action_weights_number):
                 feat = [0.0] * self.state.features_num
                 # print(feat)
                 multi_feat.append(feat)
-
             self.agent.SetMultipleWeights(multi_feat)
 
-
-
-            return 0
 
     def input(self):
         # The input is set up to the global variable input_key
@@ -180,6 +201,9 @@ class RLAgent(object):
             next_action = self.agent.Update(self.frame_data,reward,self.current_action.action_weight)
             # print("nope")
 
+            # print('-----------------------------------------------')
+            # print(self.agent.actions_weights)
+
             self.current_action = next_action
             # print("trying to get chosen_action")
             # print(self.state.my_actions)
@@ -197,6 +221,7 @@ class RLAgent(object):
         # print(action)
         if type(action) is str:
             # print("action is a string")
+            print("The option picked: ", action)
             action_name = action
         else:
             action_name = action.name()
@@ -204,9 +229,8 @@ class RLAgent(object):
         selected_action = self.ACTION.NEUTRAL
         # print("starting the ifs")
         if "OPTION" in action_name:
-            print("it is an option")
-            if "CAUTIOUS" in action_name:
-                print("I am cautious")
+            # print("it is an option")
+            if "GUARD" in action_name:
                 self.action_air = [self.ACTION.AIR_GUARD]
                 # print("done with air")
                 self.action_ground = [self.ACTION.DASH,self.ACTION.NEUTRAL,self.ACTION.STAND_A,self.ACTION.CROUCH_B,self.ACTION.THROW_A,self.ACTION.STAND_B,self.ACTION.CROUCH_A]
@@ -214,8 +238,9 @@ class RLAgent(object):
                 self.op_action_air = [self.ACTION.AIR_B, self.ACTION.AIR_DB,self.ACTION.AIR_FB]
                 self.op_action_ground = [self.ACTION.STAND,self.ACTION.DASH,self.ACTION.STAND_A,self.ACTION.CROUCH_B,self.ACTION.STAND_B]
                 self.simulate_time = 60
-            elif "KICKER" in action_name: 
-                print("I am kicker")
+
+            elif "KICK" in action_name: 
+                # print("I am kicker")
                 self.action_air = [self.ACTION.AIR_GUARD]
                 # print("done with air")
                 self.action_ground = [self.ACTION.STAND,self.ACTION.DASH,self.ACTION.FORWARD_WALK,self.ACTION.CROUCH_A,self.ACTION.CROUCH_B,self.ACTION.CROUCH_FB,self.ACTION.STAND_D_DB_BB]
@@ -225,27 +250,9 @@ class RLAgent(object):
                 self.op_action_ground = [self.ACTION.STAND,self.ACTION.DASH,self.ACTION.CROUCH_FB]
                 # print("done with option ground")
                 self.simulate_time = 60
-            elif "ESCAPER" in action_name:
-                print("I am escaper")
-                self.action_air = [self.ACTION.AIR_GUARD]
-                # print("done with air")
-                self.action_ground = [self.ACTION.BACK_STEP,self.ACTION.JUMP,self.ACTION.NEUTRAL,self.ACTION.BACK_JUMP,self.ACTION.FOR_JUMP]
-                # print("done with ground")
-                self.op_action_air = [self.ACTION.AIR_B, self.ACTION.AIR_DB,self.ACTION.AIR_FB]
-                # print("done with option air")
-                self.op_action_ground = [self.ACTION.STAND_A, self.ACTION.STAND_FA, self.ACTION.STAND_FB, self.ACTION.CROUCH_FB,self.ACTION.STAND_B]
-            elif "ATTACKER" in action_name:
-                print("I am attacker")
-                self.action_air = [self.ACTION.AIR_GUARD]
-                # print("done with air")
-                self.action_ground = [self.ACTION.NEUTRAL, self.ACTION.DASH,self.ACTION.AIR_FA,self.ACTION_THROW_A,self.ACTION.STAND_B,self.ACTION.STAND_A,self.ACTION.CROUCH_A]
-                # print("done with ground")
-                self.op_action_air = [self.ACTION.AIR_B, self.ACTION.AIR_DB,self.ACTION.AIR_FB]
-                self.op_action_ground = [self.ACTION.DASH, self.ACTION.STAND ]
-                # print("done with option ground")
-                self.simulate_time = 60
-            elif "GRABBER" in action_name:
-                print("I am grabber")
+
+            elif "GRAB" in action_name:
+                # print("I am grabber")
                 self.action_air = [self.ACTION.AIR]
                 # print("done with air")
                 self.action_ground = [self.ACTION.FORWARD_WALK,self.ACTION.DASH,self.ACTION.STAND_A,self.ACTION.THROW_A]
@@ -256,8 +263,8 @@ class RLAgent(object):
                 # print("done with option ground")
                 self.simulate_time = 20
 
-            elif "ANTIAIR" in action_name:
-                print("I am antiair")
+            elif "ANTI-AIR" in action_name:
+                # print("I am antiair")
 
                 self.action_air = [self.ACTION.AIR_GUARD]
                 # print("done with air")
@@ -269,36 +276,8 @@ class RLAgent(object):
                 # print("done with option ground")
                 self.simulate_time = 20
 
-            elif "STOMPER" in action_name:
-                print("I am stomper")
 
-                self.action_air = [self.ACTION.AIR_F_D_DFB,self.ACTION.AIR_D_DB_BA,self.ACTION.AIR_FB,self.ACTION.AIR_DB, self.ACTION.AIR_B]
-                # print("done with air")
-                self.action_ground = [self.ACTION.NEUTRAL, self.ACTION.THROW_A]
-                # print("done with ground")
-                self.op_action_air = [self.ACTION.AIR]
-                # print("done with option air")
-                self.op_action_ground = [self.ACTION.NEUTRAL]
-                # print("done with option ground")
-                self.simulate_time = 30
-
-            elif "AIRDOMINATOR" in action_name:
-                print("I am airdominator")
-
-                self.action_air = [self.ACTION.AIR_A,self.ACTION.AIR_B,self.ACTION.AIR_FA,self.ACTION.AIR_FB]
-                # print("done with air")
-                self.action_ground = [self.ACTION.NEUTRAL]
-                # print("done with ground")
-                self.op_action_air = [self.ACTION.AIR]
-                # print("done with option air")
-                self.op_action_ground = [self.ACTION.NEUTRAL]
-                # print("done with option ground")
-
-
-                self.simulate_time = 60
-
-            elif "MCTS" in action_name:
-                print("I am MCTS")
+            elif "ALL_ACTIONS" in action_name:
                 self.action_air = [ self.ACTION.AIR_GUARD , self.ACTION.AIR_A ,self.ACTION.AIR_B ,self.ACTION.AIR_DA, self.ACTION.AIR_DB ,self.ACTION.AIR_FA ,self.ACTION.AIR_FB ,self.ACTION.AIR_UA ,self.ACTION.AIR_UB ,self.ACTION.AIR_D_DF_FA ,self.ACTION.AIR_D_DF_FB ,self.ACTION.AIR_F_D_DFA ,self.ACTION.AIR_F_D_DFB ,self.ACTION.AIR_D_DB_BA , self.ACTION.AIR_D_DB_BB]
                 # print("done with air")
 
@@ -321,23 +300,6 @@ class RLAgent(object):
             best_action = root_node.MCTS()
             print("exeuting: ",best_action.name())
             self.cc.commandCall(best_action.name())
-        elif "EXP" in action_name:
-            if (not self.ACTION.NEUTRAL in attack_name):
-                print("executing :",attack_name)
-                self.cc.commandCall(attack_name)
-
-
-            
-
-
-
-
-                    
-
-
-
-
-
 
 
     def MCTSPrepare(self):

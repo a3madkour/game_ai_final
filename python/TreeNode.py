@@ -241,9 +241,9 @@ class TreeNode(object):
         # print("self action: ",self.my_actions)
         # print("selected: ", selected)
         
-        if self.DEBUG_MODE:
-            print("Selected my_actions: ",self.my_actions[selected], ", Total number of trials: ",self.games)
-            print()
+        # if self.DEBUG_MODE:
+        #     print("Selected my_actions: ",self.my_actions[selected], ", Total number of trials: ",self.games)
+        #     print()
 
         # print(self.my_actions)
         # print(selected)

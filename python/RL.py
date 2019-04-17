@@ -46,6 +46,7 @@ class RL(object):
         self.player_num = player_num
         self.last_value = 0
         self.storage = []
+        self.actions_weights = []
 
     def FillTrace(self,feat):
         # print("Fill trace being called")
@@ -199,11 +200,11 @@ class RL(object):
 
         # print("back from update weights")
 
-        if self.use_exp_replay:
-            if len(self.storage) >= self.max_batch_size:
-                self.BatchUpdates(batch_update_size)
+        # if self.use_exp_replay:
+        #     if len(self.storage) >= self.max_batch_size:
+                # self.BatchUpdates(batch_update_size)
 
-            self.storage.add(Transition(self.state.last_features,factor_1,action_index))
+            # self.storage.add(Transition(self.state.last_features,factor_1,action_index))
 
         self.last_value = next_action.value
         self.state.last_features =  self.state.features
@@ -222,7 +223,7 @@ class RL(object):
 
         for el in int_set:
             transition = self.storage[el]
-            weight = self.action_weights[transition.action]
+            weight = self.actions_weights[transition.action]
             self.UpdateWeights(weight,transition.target,transition.features)
 
         
